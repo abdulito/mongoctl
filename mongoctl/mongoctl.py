@@ -2789,6 +2789,9 @@ def setup_db_users(server, db, db_users):
     return count_new_users
 
 ###############################################################################
+@robustify(max_attempts=5, retry_interval=2,
+           do_on_exception=_raise_if_not_autoreconnect,
+           do_on_failure=_raise_on_failure)
 def _mongo_add_user(db, username, password, read_only=False):
     try:
 
@@ -2877,9 +2880,6 @@ def setup_server_admin_users(server):
             "\n Cause: %s" % (server.get_id(), e))
 
 ###############################################################################
-@robustify(max_attempts=5, retry_interval=2,
-    do_on_exception=_raise_if_not_autoreconnect,
-    do_on_failure=_raise_on_failure)
 def setup_server_local_users(server):
 
     seed_local_users = False
