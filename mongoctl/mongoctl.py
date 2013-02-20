@@ -62,6 +62,7 @@ from bson.son import SON
 from minify_json import minify_json
 from mongoctl_command_config import MONGOCTL_PARSER_DEF
 from verlib import NormalizedVersion, suggest_normalized_version
+from robustify.robustify import robustify
 ###############################################################################
 # Constants
 ###############################################################################
@@ -129,6 +130,21 @@ REPL_KEY_SUPPORTED_VERSION = '2.0.0'
 
 LATEST_VERSION_FILE_URL = "https://raw.github.com/mongolab/mongoctl/master/" \
                           "mongo_latest_stable_version.txt"
+
+###############################################################################
+# Robustification helpers
+###############################################################################
+
+def _raise_if_not_autoreconnect(exception):
+    if not isinstance(exception, pymongo.errors.AutoReconnect):
+        log_verbose("Reraising non-AutoReconnect exception: %s" % exception)
+        raise
+    log_warning("Caught AutoReconnect exception!")
+
+###############################################################################
+def _raise_on_failure():
+    raise
+
 ###############################################################################
 # MAIN
 ###############################################################################
@@ -2857,6 +2873,9 @@ def setup_server_admin_users(server):
             "\n Cause: %s" % (server.get_id(), e))
 
 ###############################################################################
+@robustify(max_attempts=5, retry_interval=2,
+    do_on_exception=_raise_if_not_autoreconnect,
+    do_on_failure=_raise_on_failure)
 def setup_server_local_users(server):
 
     seed_local_users = False
