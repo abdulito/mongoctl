@@ -136,10 +136,14 @@ LATEST_VERSION_FILE_URL = "https://raw.github.com/mongolab/mongoctl/master/" \
 ###############################################################################
 
 def _raise_if_not_autoreconnect(exception):
-    if not isinstance(exception, pymongo.errors.AutoReconnect):
+
+    if (isinstance(exception, pymongo.errors.AutoReconnect) or
+        isinstance(exception.cause, pymongo.errors.AutoReconnect)):
+        log_warning("Caught AutoReconnect exception!")
+    else:
         log_verbose("Reraising non-AutoReconnect exception: %s" % exception)
         raise
-    log_warning("Caught AutoReconnect exception!")
+
 
 ###############################################################################
 def _raise_on_failure():
@@ -2902,7 +2906,7 @@ def setup_server_local_users(server):
     except Exception,e:
         raise MongoctlException(
             "Error while setting up local users on server '%s'."
-            "\n Cause: %s" % (server.get_id(), e))
+            "\n Cause: %s" % (server.get_id(), e), e)
 
 ###############################################################################
 def read_seed_password(dbname, username):
