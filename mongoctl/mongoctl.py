@@ -62,7 +62,7 @@ from bson.son import SON
 from minify_json import minify_json
 from mongoctl_command_config import MONGOCTL_PARSER_DEF
 from verlib import NormalizedVersion, suggest_normalized_version
-from robustify.robustify import robustify
+
 ###############################################################################
 # Constants
 ###############################################################################
@@ -2789,10 +2789,7 @@ def setup_db_users(server, db, db_users):
     return count_new_users
 
 ###############################################################################
-@robustify(max_attempts=5, retry_interval=2,
-           do_on_exception=_raise_if_not_autoreconnect,
-           do_on_failure=_raise_on_failure)
-def _mongo_add_user(db, username, password, read_only=False):
+def _mongo_add_user(db, username, password, read_only=False, num_tries=1):
     try:
 
         db.add_user(username, password, read_only)
@@ -2803,6 +2800,14 @@ def _mongo_add_user(db, username, password, read_only=False):
             pass
         else:
             raise ofe
+    except errors.AutoReconnect, ar:
+        if num_tries < 3:
+            log_warning("_mongo_add_user: Caught a AutoReconnect error. "
+                        "retrying...")
+            _mongo_add_user(db, username, password, read_only=read_only,
+                num_tries=num_tries+1)
+        else:
+            raise
 
 
 ###############################################################################

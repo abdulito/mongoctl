@@ -126,8 +126,7 @@ setup(
               'mongoctl/tests',
               'mongoctl/tests/testing_conf',
               'mongoctl/minify_json',
-              'mongoctl/sample_conf',
-              'robustify'],
+              'mongoctl/sample_conf'],
 
     package_data = {'mongoctl.tests.testing_conf':
                         ['*.config'],
